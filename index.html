@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LAS - Linear Algebraic Soup</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <link href="style.css" rel="stylesheet"/>
+    <script>history.scrollRestoration = "manual"</script>
+  </head>
+  <body>
+    <center><h1>Linearly Algebraic Soup</h1></center>
+    <div class="div-canvas">
+    <canvas id="pg-canvas" class="d-canvas" >
+    </canvas>
+    </div>
+
+    <center>
+      <h2> </h2>
+    </center>
+    <div class="terminal" id="input-cmd-div" style="display: flex; margin: auto; flex-direction: row;">
+    </div>
+
+    <div class="text-area-cls" id="text-area">
+      <h2>NAME</h2>
+      LAS - Linearly Algebaraic Soup
+    </div>
+
+    <div class="text-area-cls" id="text-area">
+      <h2>DESCRIPTION</h2>
+      LAS is a matrix transformation visualizer for 2D space. 
+    </div>
+
+    <div class="text-area-cls" id="text-area">
+      <h2>USAGE</h2>
+      <p>Create a vector that goes from origin to the point (x, y):</p>
+      <code>>>> v x y</code>
+      <p>Transform the space using the matrix with first row [m11 m12] and second row [m21 m22]:</p>
+      <code>>>> t m11 m12 m21 m22</code>
+      <p>For example, the following commands:</p>
+      <code>>>> v 1 0</code>
+      <br>
+      <code>>>> v 0 1</code>
+      <br>
+      <code>>>> t 2 0 0 2</code>
+      <br>
+      <code>>>> t 1 0 1 1</code>
+      <br>
+      <code>>>> t 0.5 0 0 0.5</code>
+      <p>would create the two basis vectors, scale the whole space by a factor of 2,
+	take the basis vector (1 0) to (1 1), and then scale back to the original factor.
+    </div>
+
+    <div class="text-area-cls" id="text-area">
+      <h2>BUGS</h2>
+      <ul>
+	<li>y-axis is reversed with positives going downwards.</li>
+	<li>sign reversing transformations are animated in a funky way.</li>
+	<li>currently the terminal overflows on input in a very shitty way.</li>
+	<li>missing trig functions, until support is added there'll be an easter egg.</li>
+	<li>if this is unusable on your device, unless you're surfing with a NES emulator.</li>
+      </ul>
+    </div>
+
+    <div class="text-area-cls" id="text-area">
+      <h2>CONTACT</h2>
+      If you find a bug or just wanna chit chat then send me an email at nullp0tr at gmail dot com.
+    </div>
+
+    <script type="text/javascript" src="terminal.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+  </body>
+</html>
