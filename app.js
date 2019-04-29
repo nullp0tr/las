@@ -1,5 +1,7 @@
-/* code needs a proper full pass refactor. currently it's the product of what I call proto
- refactoring. */
+/* meh */
+
+
+const IdentityMatrix = new Matrix(1, 0, 0, 1)
 
 const canvas = document.getElementById("pg-canvas")
 canvas.style.backgroundColor = 'rgba(0, 0, 0, 1)';
@@ -10,14 +12,13 @@ canvas.height = cheight
 canvas.width = cwidth
 
 const ctx = canvas.getContext("2d")
-ctx.lineWidth = 2
+ctx.lineWidth = 4
 
-const ORIGIN = [(cwidth/2), (cheight/2)]
+const Origin = new Vector(cwidth/2, cheight/2)
 
-const vectors = []
-const IDENTITY_MATRIX = new Array([1,0],[0,1])
-const transformations = new Array()
-transformations.push(IDENTITY_MATRIX)
+const vector_stack = new Array()
+
+const matrix_stack = new Array()
 
 const inputDiv = document.getElementById("input-cmd-div")
 term = new Terminal()
@@ -33,85 +34,21 @@ const term_input_handler = (x) => {
 term.input(">>> ", term_input_handler)
 
 
-function matrix_vec_multiply(matrix, vec) {
-    matrix_fst_row = matrix[0]
-    matrix_snd_row = matrix[1]
-    x = matrix_fst_row[0] * vec[0] + matrix_fst_row[1] * vec[1]
-    y = matrix_snd_row[0] * vec[0] + matrix_snd_row[1] * vec[1]
-    return [x, y]
-}
-
-function matrix_matrix_multiply(m1, m2) {
-    m1_fst_row = m1[0]
-    m1_snd_row = m1[1]
-    m2_fst_row = m2[0]
-    m2_snd_row = m2[1]
-    new_matrix = [[0,0],[0,0]]
-    new_matrix[0][0] = m1_fst_row[0] * m2_fst_row[0] + m1_fst_row[1] * m2_snd_row[0]
-    new_matrix[0][1] = m1_fst_row[0] * m2_fst_row[1] + m1_fst_row[1] * m2_snd_row[1]
-    new_matrix[1][0] = m1_snd_row[0] * m2_fst_row[0] + m1_snd_row[1] * m2_snd_row[0]
-    new_matrix[1][1] = m1_snd_row[0] * m2_fst_row[1] + m1_snd_row[1] * m2_snd_row[1]
-    return new_matrix
-}
-
-function matrix_matrix_add(m1, m2) {
-    nm = [[0,0],[0,0]]
-    nm[0][0] = m1[0][0] + m2[0][0]
-    nm[0][1] = m1[0][1] + m2[0][1]
-    nm[1][0] = m1[1][0] + m2[1][0]
-    nm[1][1] = m1[1][1] + m2[1][1]
-    return nm
-}
-
-function matrix_matrix_sub(m1, m2) {
-    nm = [[0,0],[0,0]]
-    nm[0][0] = m1[0][0] - m2[0][0]
-    nm[0][1] = m1[0][1] - m2[0][1]
-    nm[1][0] = m1[1][0] - m2[1][0]
-    nm[1][1] = m1[1][1] - m2[1][1]
-    return nm
-}
-
-function matrix_scalar_multiply(m, scalar) {
-    let nm = [...m]
-    nm[0][0] *= scalar
-    nm[0][1] *= scalar
-    nm[1][0] *= scalar
-    nm[1][1] *= scalar
-    return nm
-}
-
-function draw_vector(vec) {
-    ctx.save()
-    let new_vec = vec
-    transformations.forEach(m => {
-	new_vec = matrix_vec_multiply(m, new_vec)
-    })
-    x = new_vec[0]
-    y = new_vec[1]
-
-    ctx.strokeStyle = "#ffff10"
-    ctx.beginPath()
-    ctx.moveTo(ORIGIN[0], ORIGIN[1])
-    ctx.lineTo(ORIGIN[0] + x * 20, ORIGIN[1] - (y * 20))
-    ctx.stroke()
-    ctx.restore()
+const strk_draw_vector = (vec, step=20) => {
+    ctx.strokeStyle = "#cfc364"
+    ctx.lineWidth = 1.5
+    ctx.moveTo(0, 0)
+    ctx.lineTo(vec.x * step, -(vec.y * step))
 }
 
 
-function transform_space(matrix) {
-    ctx.clearRect(0, 0, cwidth, cheight)
-    const m = [...matrix]
-    transformations.push(matrix)
-    draw_grid(ctx, cwidth * 2, cheight * 2, 20, transformations)
+const fill_draw_vector_hat = (vec, step=20) => {
+    ctx.fillStyle = "#ff6347"
+    ctx.arc(vec.x * step, -(vec.y * step), 2, 0, Math.PI * 2)
 }
 
-function v_cmd(vec) {
-    vectors.push(vec)
-    transform_space(IDENTITY_MATRIX) // sorry 
-}
 
-function parse(user_input) {
+const parse = (user_input) => {
     let cmd = user_input.trim()
 
     if (cmd.startsWith("v")) {
@@ -121,7 +58,9 @@ function parse(user_input) {
 	    // parsing error! 
 	    return
 	}
-	v_cmd([args[0], args[1]])
+	vector_stack.push(new Vector(args[0], args[1]))
+	matrix_stack.push(IdentityMatrix) // sorry to lazy
+	refresh()
     }
 
     else if (cmd.startsWith("t")) {
@@ -132,114 +71,125 @@ function parse(user_input) {
 	    // parsing error!
 	    return
 	}
-	transform_space([[args[0], args[1]], [args[2], args[3]]])
+	m = new Matrix(args[0], args[1], args[2], args[3])
+	matrix_stack.push(m)
+	refresh()
     }
 
     else if (cmd === "reset") {
-	transformations.length = 0
-	transformations.push(IDENTITY_MATRIX)
-	ctx.clearRect(0, 0, cwidth, cheight)
-	draw_grid(ctx, cwidth, cheight, 20, transformations)
+	matrix_stack.length = 0
+	vector_stack.length = 0
+	refresh()
     }
 
     else if (cmd == "rot") {
-	transform_space(
-	    [[Math.cos(Math.PI / 2), -Math.sin(Math.PI / 2)],
-	     [Math.sin(Math.PI / 2), Math.cos(Math.PI / 2)]]
+	rot90_matrix = new Matrix(
+	    Math.cos(Math.PI / 2), -Math.sin(Math.PI / 2),
+	    Math.sin(Math.PI / 2), Math.cos(Math.PI / 2)
 	)
+	matrix_stack.push(rot90_matrix)
+	refresh()
     }
 }
 
-var draw_grid = function(ctx, w, h, step, transformations) {
 
-    COUNTER_MAX = 100
+const apply_animated_transforms = (ctx, w, h, matrices, counter=100, cmax=100, step=20) => {
+    let blm = IdentityMatrix  // before last matrix
+    ctx.setTransform(blm.a11, blm.a21, blm.a12, blm.a22, Origin.x, Origin.y)
+    matrices.slice(0, matrices.length - 1).forEach((m) => {
+	ctx.setTransform(m.a11, m.a21, m.a12, m.a22, Origin.x, Origin.y)
+	blm = mm_mul(blm, m)
+    })
 
-    const drawFrame = function(x, counter=1) {
-	ctx.save()
-	ctx.beginPath();
-	ctx.clearRect(0,0, cwidth, cheight)
-	let latest_matrix = IDENTITY_MATRIX
-	ctx.setTransform(latest_matrix[0][0], latest_matrix[1][0], latest_matrix[0][1], latest_matrix[1][1], ORIGIN[0], ORIGIN[1])
+    let pm = null
+    if (matrices.length - 1 >= 0) {
+	let lm = matrices.slice(-1).pop()  // last matrix
+	pm = mm_mul(blm, lm)  // product matrix aka. transformations from I
 
-	for (let i=0; i < transformations.length - 1; i++) {
-	    m = transformations[i]
-	}
-	transformations.slice(0, transformations.length - 1).forEach((m) => {	
-	    ctx.setTransform(m[0][0], m[1][0], m[0][1], m[1][1], ORIGIN[0], ORIGIN[1])
-	    latest_matrix = matrix_matrix_multiply(latest_matrix, m)
-	})
-
-	latest_matrix_scale = [
-	    Math.sqrt(latest_matrix[0][0]**2 + latest_matrix[1][0]**2),
-	    Math.sqrt(latest_matrix[0][1]**2 + latest_matrix[1][1]**2),
-	]
-
-	if (latest_matrix[0][0] < 0 || latest_matrix[1][0] < 0) {
-	    latest_matrix_scale[0] *= -1
-	}
-
-	if (latest_matrix[0][1] < 0 || latest_matrix[1][1] < 0) {
-	    latest_matrix_scale[1] *= -1
-	}
-
-	if (transformations.length - 1 >= 0) {
-	    let mm = transformations[transformations.length - 1]
-
-	    let m1 = matrix_matrix_multiply(latest_matrix, mm)
-	    let m = matrix_matrix_add(
-		latest_matrix,
-		matrix_scalar_multiply(
-		    matrix_matrix_sub(m1, latest_matrix),
-		    counter/COUNTER_MAX
-		)
-	    )
-
-	    ctx.setTransform(m[0][0], m[1][0], m[0][1], m[1][1], ORIGIN[0], ORIGIN[1])
-	}
-
-	_w = step * Math.round(w/step)
-	for (var x=-_w;x<=_w;x+=step) {
-            ctx.moveTo(x, -h);
-            ctx.lineTo(x, h);
-	}
-	ctx.strokeStyle = '#1fabc3';
-	ctx.lineWidth = 1;
-
-	_h = step * Math.round(h/step)
-	for (var y=-_h;y<=_h;y+=step) {
-            ctx.moveTo(-w, y);
-            ctx.lineTo(w, y);
-	}
-
-	ctx.stroke()
-
-	ctx.beginPath()
-	vectors.forEach((v) => {
-	    const x = v[0]
-	    const y = v[1]
-
-	    ctx.strokeStyle = "#ffff10"
-	    ctx.moveTo(0, 0)
-	    ctx.lineTo(x * 20, -(y * 20))
-	    
-	})
-
-	ctx.stroke();
-
-	ctx.beginPath()
-	ctx.arc(0, 0, 2, 0, 2 * Math.PI)
-	ctx.fillStyle = "#ff0000"
-	ctx.fill()
-
-	ctx.restore()
-
-	if (counter < COUNTER_MAX) {
-	    window.requestAnimationFrame(() => drawFrame(x, counter+1))
-	}
+	//  im = blm + ((pm - blm) * counter/COUNTER_max)
+	let im = mm_add(blm, ms_mul(mm_sub(pm, blm), counter/cmax))
+	ctx.setTransform(im.a11, im.a21, im.a12, im.a22, Origin.x, Origin.y)
     }
 
-    window.requestAnimationFrame(drawFrame)
-};
+    return pm
+}
 
 
-draw_grid(ctx, cwidth*2, cheight*2, 20, transformations)
+const refresh_space = (ctx, w, h, matrices, step=20) => {
+    counter = 1
+    cmax = 100
+    const frame = (x, c=counter) => {
+	ctx.clearRect(0, 0, cwidth, cheight)
+
+	ctx.beginPath()
+	strk_draw_grid(ctx, w, h, color="grey")
+	ctx.stroke()
+	ctx.closePath()
+
+	ctx.save()
+	const product = apply_animated_transforms(ctx, w, h, matrices, c, cmax)
+	ctx.beginPath()
+	strk_draw_grid(ctx, w, h)
+	ctx.stroke()
+	ctx.closePath()
+
+	// global state leakage : will restore purity at some point
+	vector_stack.forEach(v => {
+	    ctx.save()
+	    ctx.beginPath()
+	    strk_draw_vector(v)
+	    ctx.stroke()
+	    ctx.closePath()
+	    ctx.restore()
+	})
+
+	vector_stack.forEach(v => {
+	    ctx.save()
+	    ctx.beginPath()
+	    fill_draw_vector_hat(v)
+	    ctx.fill()
+	    ctx.closePath()
+	    ctx.restore()
+	})
+
+	ctx.restore()
+	if (c < cmax) {
+	    c += 1
+	    window.requestAnimationFrame((x) => frame(x, c))
+	} else {
+	    // too lazy to properly handle floats right now, though
+	    // this is better than nothing
+	    if (product && product.equals(IdentityMatrix)) {
+		matrix_stack.length = 0
+	    }
+	}
+    }
+    window.requestAnimationFrame(frame)
+}
+
+
+const strk_draw_grid = (ctx, w, h, color="#1fabc3", step=20) => {
+    ctx.strokeStyle = color
+    ctx.lineWidth = 1
+    
+    const width = step * Math.round(w/step)
+    for (let x = -width; x <= width; x += step) {
+        ctx.moveTo(x, -h);
+        ctx.lineTo(x, h);
+    }
+
+
+    const height = step * Math.round(h/step)
+    for (let y = -height; y <= height; y += step) {
+        ctx.moveTo(-w, y);
+        ctx.lineTo(w, y);
+    }    
+}
+
+
+const refresh = () => {
+    refresh_space(ctx, cwidth * 2, cheight * 2, matrix_stack)
+}
+
+
+refresh()
