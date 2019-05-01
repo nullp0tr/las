@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>LAS - Linear Algebraic Soup</title>
+    <title>LAS - Linear Algebraic Shell</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <meta name="description" content="2D Matrix Transformation Visualizer">
+    <meta name="keywords" content="Matrix,Transformation,Visualizer,2D,Linear,Algebra">
+    <meta name="author" content="Ahmed Alsharif">
     <link href="style.css" rel="stylesheet"/>
     <script>history.scrollRestoration = "manual"</script>
     <script type="text/javascript" src="matrix.js"></script>
     <script type="text/javascript" src="terminal.js"></script>
   </head>
   <body>
-    <center><h1>Linearly Algebraic Soup</h1></center>
+    <center><h1>Linear Algebraic Shell</h1></center>
     <div class="div-canvas">
     <canvas id="pg-canvas" class="d-canvas" >
     </canvas>
@@ -19,26 +22,68 @@
     <center>
       <h2> </h2>
     </center>
-    <div class="terminal" id="input-cmd-div" style="display: flex; margin: auto; flex-direction: row;">
-    </div>
+    
+    <div class="terminal" id="tiny-tty" style="display: flex; margin: auto; flex-direction: row;"></div>
 
     <div class="text-area-cls" id="text-area">
       <h2>NAME</h2>
-      LAS - Linearly Algebaraic Soup
+      LAS - Linear Algebraic Shell
     </div>
 
     <div class="text-area-cls" id="text-area">
       <h2>DESCRIPTION</h2>
-      LAS is a matrix transformation visualizer for 2D space. 
+      LAS is a command based matrix transformation visualizer for 2D space. 
     </div>
 
     <div class="text-area-cls" id="text-area">
       <h2>USAGE</h2>
-      <p>Create a vector that goes from origin to the point (x, y):</p>
-      <code>>>> v x y</code>
-      <p>Transform the space using the matrix with first row [m11 m12] and second row [m21 m22]:</p>
+      <h4>NUMBER ARGUMENTS</h4>
+      LAS supports two kinds of number arguments. Real numbers
+      (floating point) and trigonometric functions. Trigonometric functions have the
+      format (func x) where x is a real number. For example: (sin 2),
+      (cos 18.9999). Trigonometric functions must always be surrounded
+      by parentheses and CAN NOT be nested like (cos (cos 1))!
+      currently only cosine and sine are supported.
+      <h4>VECTOR</h4>
+      <p>You can use vector, vec, or v to create vectors, it takes two
+      number arguments. For example:</p>
+      <code>>>> vec x y</code>
+      <br>
+      <code>>>> vector (cos x) y</code>
+      <br>
+      <code>>>> v x (sin y)</code>
+      <br>
+      <code>>>> v (cos x) (sin y)</code>
+
+      <h4>TRANSFORM</h4>
+      <p>You can apply a matirx transformation to the space using
+      transform or t for short. It takes 4 number arguments m11 m12
+      m21 m22 in that order. For example:</p>
       <code>>>> t m11 m12 m21 m22</code>
-      <p>For example, the following commands:</p>
+
+      <h4>ROTATE</h4>
+      <p>You can use rotate, rot, or r to rotate the space. It takes the
+      degree as an argument and not a radian. Rotate is basically just
+      a specialization of the transform command that applies the
+      matrix with first row [cos(deg) -sin(deg)] and second row
+      [sin(deg) cos(deg)]. Examples:</p>
+      <code>>>> rot 90</code>
+      <br>
+      <code>>>> rotate 180</code>
+      <br>
+
+      <h4>RESET</h4>
+      <p>You can use reset to reset the state of the world, reverse all
+      transformations and remove all displayed vectors.</p>
+      <code>>>> reset</code>
+      <br>
+      
+      
+    </div>
+
+    <div class="text-area-cls" id="text-area">
+      <h2>EXAMPLE</h2>
+      <p>The following commands:</p>
       <code>>>> v 1 0</code>
       <br>
       <code>>>> v 0 1</code>
@@ -57,15 +102,18 @@
       <ul>
 	<li>y-axis is reversed with positives going downwards.</li>
 	<li>sign reversing transformations are animated in a funky way.</li>
-	<li>currently the terminal overflows on input in a very shitty way.</li>
-	<li>missing trig functions, until support is added there'll be an easter egg.</li>
-	<li>if this is unusable on your device, unless you're surfing with a NES emulator.</li>
+	<li>if this is unusable on your device then it's a bug, unless
+	you're surfing with a NES emulator.</li>
       </ul>
     </div>
 
     <div class="text-area-cls" id="text-area">
       <h2>CONTACT</h2>
-      If you find a bug or just wanna chit chat then send me an email at nullp0tr at gmail dot com.
+      If you find a bug or just wanna chit chat then send me an email
+      at nullp0tr at gmail dot com. You can also directly contribute
+      to the project on      
+      <a href="https://github.com/nullp0tr/las">github</a>
+      :)
     </div>
 
     <script type="text/javascript" src="app.js"></script>

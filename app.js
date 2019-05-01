@@ -1,6 +1,120 @@
 /* meh */
 
 
+const DECIMAL_NUMBER_REGEX = /[-+]?[0-9]*\.?[0-9]+/g
+
+
+const OPEN_PARAN = /\(/g
+const CLOSE_PARAN = /\)/g
+
+const TRIG_NAME_REGEX = /(cos|sin)/g
+const TRIG_REGEX = new RegExp(
+    OPEN_PARAN.source
+	+ TRIG_NAME_REGEX.source
+	+ "\\s+"
+	+ DECIMAL_NUMBER_REGEX.source
+	+ CLOSE_PARAN.source,
+    "g"
+)
+
+
+const NUMBER_REGEX = new RegExp(TRIG_REGEX.source + "|" + DECIMAL_NUMBER_REGEX.source)
+
+
+const extract_numbers = (input) => {
+    const processed = input.replace(/\s\s+/g, " ")
+	  .replace(/cos /g, "cos_")
+	  .replace(/sin /g, "sin_")
+	  .split(" ")
+	  .splice(1)
+    const extracted = new Array()
+
+    
+    for (each in processed) {
+	const val = processed[each]
+	console.log(val)
+	const matched_token = val.match(DECIMAL_NUMBER_REGEX)
+	const matched = Number(matched_token[0])
+
+	if (val.match(/cos/g)) {
+	    extracted.push(Math.cos(matched))
+	} else if (val.match(/sin/g)) {
+	    extracted.push(Math.sin(matched))
+	} else {
+	    extracted.push(matched)
+	}
+    }
+    
+    return extracted
+}
+
+
+const tty_vec_cmd = (args) => {
+    vector_stack.push(new Vector(args[0], args[1]))
+    matrix_stack.push(IdentityMatrix) // sorry too lazy
+    refresh()
+    return "created the vector (" + args[0] + ", " + args[1] + ")"    
+}
+
+
+const tty_transform_cmd = (args) => {
+    const m = new Matrix(args[0], args[1], args[2], args[3])
+    matrix_stack.push(m)
+    refresh()
+    return `transformed space using the matrix: 
+    [${args[0]} ${args[1]}]
+    [${args[2]} ${args[3]}]`
+}
+
+
+const tty_io_cb = (input) => {
+
+    vec_cmd = /(vector|vec|v)/g
+    vec_reg = new RegExp(  // /^VCMD(\s+NUMBER){2}\s*$
+	"^" + vec_cmd.source + "(\\s+(" + NUMBER_REGEX.source + ")){2}\\s*$"
+    )
+    console.log(vec_reg.exec(input))
+    if (input.match(vec_reg)) {
+	return tty_vec_cmd(extract_numbers(input))
+    }
+
+    trans_cmd = /(transform|t)/g
+    trans_reg = new RegExp(
+	"^" + trans_cmd.source + "(\\s+(" + NUMBER_REGEX.source + ")){4}\\s*$"
+    )
+    if (input.match(trans_reg)) {
+	return tty_transform_cmd(extract_numbers(input))
+    }
+
+    rot_cmd = /(rotate|rot|r)/g
+    rot_reg = new RegExp("^" + rot_cmd.source + "(\\s+" + DECIMAL_NUMBER_REGEX.source + "){1}\\s*$")
+    if (input.match(rot_reg)) {
+	deg = extract_numbers(input)[0]
+	rad = deg * (Math.PI / 180)
+	return tty_transform_cmd([Math.cos(rad), -Math.sin(rad), Math.sin(rad), Math.cos(rad)])
+    }
+
+    reset_reg = /^reset\s*$/
+    if (input.match(reset_reg)) {
+	vector_stack.length = 0
+	matrix_stack.length = 0
+	refresh()
+	return "setting the cosmic scale factor to 0."
+    }
+
+    soup_reg = /.*meal of the day.*/
+    if (input.match(soup_reg)) {
+	return "soup"
+    }
+
+    return input ? "unrecognized command or wrong arguments." : ""
+}
+
+
+const tinyTTY = new TinyTTY(tty_io_cb)
+const tiny_tty_div = document.getElementById("tiny-tty")
+tiny_tty_div.appendChild(tinyTTY.html)
+
 const IdentityMatrix = new Matrix(1, 0, 0, 1)
 
 const canvas = document.getElementById("pg-canvas")
@@ -20,19 +134,6 @@ const vector_stack = new Array()
 
 const matrix_stack = new Array()
 
-const inputDiv = document.getElementById("input-cmd-div")
-term = new Terminal()
-inputDiv.appendChild(term.html)
-
-const term_input_handler = (x) => {
-    const cmd = x.trim()
-    if (cmd.length)
-	parse(cmd)
-    term.input(">>> ", term_input_handler)
-}
-
-term.input(">>> ", term_input_handler)
-
 
 const strk_draw_vector = (vec, step=20) => {
     ctx.strokeStyle = "#cfc364"
@@ -45,51 +146,6 @@ const strk_draw_vector = (vec, step=20) => {
 const fill_draw_vector_hat = (vec, step=20) => {
     ctx.fillStyle = "#ff6347"
     ctx.arc(vec.x * step, -(vec.y * step), 2, 0, Math.PI * 2)
-}
-
-
-const parse = (user_input) => {
-    let cmd = user_input.trim()
-
-    if (cmd.startsWith("v")) {
-	split_cmd = cmd.split(" ")
-	args = split_cmd.slice(1, split_cmd.length)
-	if (args.length != 2) {
-	    // parsing error! 
-	    return
-	}
-	vector_stack.push(new Vector(args[0], args[1]))
-	matrix_stack.push(IdentityMatrix) // sorry to lazy
-	refresh()
-    }
-
-    else if (cmd.startsWith("t")) {
-	split_cmd = cmd.split(" ")
-	args = split_cmd.slice(1, split_cmd.length)
-
-	if (args.length != 4) {
-	    // parsing error!
-	    return
-	}
-	m = new Matrix(args[0], args[1], args[2], args[3])
-	matrix_stack.push(m)
-	refresh()
-    }
-
-    else if (cmd === "reset") {
-	matrix_stack.length = 0
-	vector_stack.length = 0
-	refresh()
-    }
-
-    else if (cmd == "rot") {
-	rot90_matrix = new Matrix(
-	    Math.cos(Math.PI / 2), -Math.sin(Math.PI / 2),
-	    Math.sin(Math.PI / 2), Math.cos(Math.PI / 2)
-	)
-	matrix_stack.push(rot90_matrix)
-	refresh()
-    }
 }
 
 
@@ -152,7 +208,16 @@ const refresh_space = (ctx, w, h, matrices, step=20) => {
 	    ctx.restore()
 	})
 
+	ctx.save()
+	ctx.beginPath()
+	ctx.fillStyle = "#ff3347"
+	ctx.arc(0, 0, 2, 0, Math.PI * 2)
+	ctx.fill()
+	ctx.closePath()
 	ctx.restore()
+	
+	ctx.restore()
+
 	if (c < cmax) {
 	    c += 1
 	    window.requestAnimationFrame((x) => frame(x, c))
@@ -190,6 +255,5 @@ const strk_draw_grid = (ctx, w, h, color="#1fabc3", step=20) => {
 const refresh = () => {
     refresh_space(ctx, cwidth * 2, cheight * 2, matrix_stack)
 }
-
 
 refresh()
