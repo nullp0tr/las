@@ -23,6 +23,7 @@ const NUMBER_REGEX = new RegExp(TRIG_REGEX.source + "|" + DECIMAL_NUMBER_REGEX.s
 
 const extract_numbers = (input) => {
     const processed = input.replace(/\s\s+/g, " ")
+	  .trim()
 	  .replace(/cos /g, "cos_")
 	  .replace(/sin /g, "sin_")
 	  .split(" ")
@@ -32,7 +33,7 @@ const extract_numbers = (input) => {
     
     for (each in processed) {
 	const val = processed[each]
-	console.log(val)
+
 	const matched_token = val.match(DECIMAL_NUMBER_REGEX)
 	const matched = Number(matched_token[0])
 
@@ -73,7 +74,7 @@ const tty_io_cb = (input) => {
     vec_reg = new RegExp(  // /^VCMD(\s+NUMBER){2}\s*$
 	"^" + vec_cmd.source + "(\\s+(" + NUMBER_REGEX.source + ")){2}\\s*$"
     )
-    console.log(vec_reg.exec(input))
+
     if (input.match(vec_reg)) {
 	return tty_vec_cmd(extract_numbers(input))
     }
