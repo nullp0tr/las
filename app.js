@@ -140,21 +140,20 @@ const strk_draw_vector = (vec, step=20) => {
     ctx.strokeStyle = "#cfc364"
     ctx.lineWidth = 1.5
     ctx.moveTo(0, 0)
-    ctx.lineTo(vec.x * step, -(vec.y * step))
+    ctx.lineTo(vec.x * step, (vec.y * step))
 }
 
 
 const fill_draw_vector_hat = (vec, step=20) => {
     ctx.fillStyle = "#ff6347"
-    ctx.arc(vec.x * step, -(vec.y * step), 2, 0, Math.PI * 2)
+    ctx.arc(vec.x * step, (vec.y * step), 2, 0, Math.PI * 2)
 }
 
 
 const apply_animated_transforms = (ctx, w, h, matrices, counter=100, cmax=100, step=20) => {
     let blm = IdentityMatrix  // before last matrix
-    ctx.setTransform(blm.a11, blm.a21, blm.a12, blm.a22, Origin.x, Origin.y)
+    ctx.setTransform(blm.a11, blm.a21, blm.a12, -blm.a22, Origin.x, Origin.y)
     matrices.slice(0, matrices.length - 1).forEach((m) => {
-	ctx.setTransform(m.a11, m.a21, m.a12, m.a22, Origin.x, Origin.y)
 	blm = mm_mul(blm, m)
     })
 
@@ -165,7 +164,7 @@ const apply_animated_transforms = (ctx, w, h, matrices, counter=100, cmax=100, s
 
 	//  im = blm + ((pm - blm) * counter/COUNTER_max)
 	let im = mm_add(blm, ms_mul(mm_sub(pm, blm), counter/cmax))
-	ctx.setTransform(im.a11, im.a21, im.a12, im.a22, Origin.x, Origin.y)
+	ctx.transform(im.a11, im.a21, im.a12, im.a22, 0, 0)
     }
 
     return pm
